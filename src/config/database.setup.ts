@@ -3,20 +3,19 @@ import Snapshot from "../models/snapshot.model";
 import Order from "../models/order.model";
 import Config from "../models/config.model";
 import {
-  DB_HOST,
-  DB_NAME,
-  DB_PASSWORD,
-  DB_PORT,
-  DB_USER,
+  DATABASE_URL,
+  DB_MAX_CONNECTIONS,
+  DB_IDLE_TIMEOUT,
 } from "../utils/constants";
 
-export const sequelize = new Sequelize({
+export const sequelize = new Sequelize(DATABASE_URL, {
   dialect: "postgres",
-  username: DB_USER || "btc_user",
-  password: DB_PASSWORD || "btc_password",
-  database: DB_NAME || "btc_db",
-  host: DB_HOST || "localhost",
-  port: Number(DB_PORT || 5432),
+  pool: {
+    max: DB_MAX_CONNECTIONS,
+    min: 0,
+    acquire: 30000,
+    idle: DB_IDLE_TIMEOUT,
+  },
   ssl: false,
   sync: {
     alter: true,
