@@ -23,7 +23,12 @@ import Snapshot from "./snapshot.model";
 class Order extends Model {
   @PrimaryKey
   @AutoIncrement
-  @Column
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    unique: true,
+    autoIncrement: true,
+  })
   declare id: number;
 
   @Column(DataType.DECIMAL(20, 2))

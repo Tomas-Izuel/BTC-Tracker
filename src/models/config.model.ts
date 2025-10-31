@@ -17,7 +17,13 @@ import {
 class Config extends Model {
   @PrimaryKey
   @AutoIncrement
-  @Column
+  @Column({
+    type: DataType.INTEGER,
+    primaryKey: true,
+    unique: true,
+    autoIncrement: true,
+    allowNull: false,
+  })
   declare id: number;
 
   @Column({

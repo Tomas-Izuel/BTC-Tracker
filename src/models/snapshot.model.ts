@@ -19,7 +19,13 @@ import {
 class Snapshot extends Model {
   @PrimaryKey
   @AutoIncrement
-  @Column
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    unique: true,
+    autoIncrement: true,
+    primaryKey: true,
+  })
   declare id: number;
 
   @Column(DataType.DECIMAL(20, 2))
