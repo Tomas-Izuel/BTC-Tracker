@@ -5,6 +5,7 @@ import AlertService from "./alert.service";
 import SnapshotService from "./snapshot.service";
 import ConfigModel from "../models/config.model";
 import { OrderService } from "./order.service";
+import { AlertType } from "../types/email/email.type";
 
 class ConsultService {
   private snapshotService: SnapshotService;
@@ -41,10 +42,8 @@ class ConsultService {
 
       try {
         await this.alertService.sendDailyReport({
-          price: snapshot.price,
-          change24h: snapshot.delta,
-          timestamp: snapshot.created_at.toISOString(),
-          alertType: "daily_report",
+          snapshot: snapshot,
+          alertType: AlertType.DAILY_REPORT,
         });
       } catch (emailError) {
         console.error("Error sending daily report email:", emailError);
@@ -57,11 +56,9 @@ class ConsultService {
 
       if (orderNeeded) {
         try {
-          await this.alertService.sendPriceAlert({
-            price: snapshot.price,
-            change24h: snapshot.delta,
-            timestamp: snapshot.created_at.toISOString(),
-            alertType: "price_high",
+          await this.alertService.sendOpportunity({
+            snapshot: snapshot,
+            alertType: AlertType.BUY_OPPORTUNITY,
           });
         } catch (emailError) {
           console.error("Error sending price alert email:", emailError);

@@ -1,43 +1,35 @@
-export interface EmailConfig {
-  host: string;
-  port: number;
-  secure: boolean;
-  auth: {
-    user: string;
-    pass: string;
-  };
+import type Order from "../../models/order.model";
+import type Snapshot from "../../models/snapshot.model";
+
+export enum AlertType {
+  DAILY_REPORT = "daily_report",
+  BUY_ORDER_EXECUTED = "buy_order_executed",
+  SELL_ORDER_EXECUTED = "sell_order_executed",
+  BUY_OPPORTUNITY = "buy_opportunity",
 }
 
-export interface EmailMessage {
-  to: string | string[];
+export interface EmailDto {
+  to: string;
   subject: string;
-  text?: string;
-  html?: string;
-  from?: string;
-}
-
-export interface EmailTemplate {
-  subject: string;
-  text: string;
   html: string;
+  text: string;
 }
 
-export interface AlertEmailData {
-  price: number;
-  change24h: number;
-  timestamp: string;
-  alertType: "price_high" | "price_low" | "volume_spike" | "daily_report";
+export interface EmailTemplateDto {
+  snapshot: Snapshot;
 }
 
-export interface OrderEmailData {
-  price: number;
-  timestamp: string;
-  orderType: "buy" | "sell";
-  snapshotId: number;
+export interface EmailOrderTemplateDto extends EmailTemplateDto {
+  order: Order;
+}
+export interface EmailTemplateResponseDto {
+  subject: string;
+  html: string;
+  text: string;
 }
 
-export interface OpportunityEmailData {
-  price: number;
-  delta: number;
-  timestamp: string;
+export interface CreateEmailDto {
+  snapshot: Snapshot;
+  order?: Order;
+  alertType: AlertType;
 }

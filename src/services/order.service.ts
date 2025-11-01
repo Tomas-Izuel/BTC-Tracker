@@ -8,16 +8,16 @@ import type {
 } from "../types/order/order.type";
 import ConfigModel from "../models/config.model";
 import AlertService from "./alert.service";
-import BinanceService from "./binance.service";
-import type { OrderEmailData } from "../types/email/email.type";
+import { BinanceRepository } from "../repository/binance.repository";
+import { AlertType, type CreateEmailDto } from "../types/email/email.type";
 
 export class OrderService {
   private alertService: AlertService;
-  private binanceService: BinanceService;
+  private binanceRepository: BinanceRepository;
 
   constructor() {
     this.alertService = new AlertService();
-    this.binanceService = new BinanceService();
+    this.binanceRepository = new BinanceRepository();
   }
 
   async executeOrderIfNeeded(snapshot: Snapshot): Promise<boolean> {
@@ -43,6 +43,7 @@ export class OrderService {
             price: snapshot.price,
             type: "buy",
             snapshotId: snapshot.id,
+            snapshot: snapshot,
           },
           config
         );
@@ -58,6 +59,7 @@ export class OrderService {
             price: snapshot.price,
             type: "sell",
             snapshotId: snapshot.id,
+            snapshot: snapshot,
           },
           config
         );
@@ -73,10 +75,9 @@ export class OrderService {
         snapshot.delta <= config.delta_sell
       ) {
         console.log("Buy opportunity detected");
-        await this.alertService.sendBuyOpportunity({
-          price: snapshot.price,
-          delta: snapshot.delta,
-          timestamp: snapshot.created_at.toISOString(),
+        await this.alertService.sendOpportunity({
+          snapshot: snapshot,
+          alertType: AlertType.BUY_OPPORTUNITY,
         });
         return false;
       }
@@ -100,7 +101,7 @@ export class OrderService {
       };
 
       // Intentar ejecutar la orden en Binance si está configurado
-      if (this.binanceService.isConfigured()) {
+      if (this.binanceRepository.isConfigured()) {
         try {
           console.log(
             `🔄 Ejecutando orden de ${order.type.toUpperCase()} en Binance...`
@@ -117,7 +118,7 @@ export class OrderService {
           );
 
           // Ejecutar orden en Binance usando el monto en USDT
-          binanceResponse = await this.binanceService.executeOrder(
+          binanceResponse = await this.binanceRepository.executeOrder(
             side,
             undefined, // No especificamos cantidad de BTC
             quoteOrderQty // Usamos el monto en USDT del config
@@ -133,7 +134,7 @@ export class OrderService {
           );
           orderData.binance_response = JSON.stringify(binanceResponse);
 
-          console.log(`✅ Orden ejecutada exitosamente en Binance:`);
+          console.log(`Orden ejecutada exitosamente en Binance:`);
           console.log(`   Order ID: ${binanceResponse.orderId}`);
           console.log(`   Status: ${binanceResponse.status}`);
           console.log(`   Executed Qty: ${binanceResponse.executedQty}`);
@@ -153,21 +154,15 @@ export class OrderService {
       const createdOrder = await OrderModel.create(orderData);
 
       // Enviar email según el tipo de orden
-      const orderEmailData: OrderEmailData = {
-        price: order.price,
-        timestamp: new Date().toISOString(),
-        orderType: order.type,
-        snapshotId: order.snapshotId,
+      const createEmailDto: CreateEmailDto = {
+        snapshot: order.snapshot,
+        order: createdOrder.toJSON() as Order,
+        alertType:
+          order.type === "buy"
+            ? AlertType.BUY_ORDER_EXECUTED
+            : AlertType.SELL_ORDER_EXECUTED,
       };
-
-      if (order.type === "buy") {
-        await this.alertService.sendBuyOrderExecuted(orderEmailData);
-        console.log("✉️  Email de orden de compra enviado");
-      } else if (order.type === "sell") {
-        await this.alertService.sendSellOrderExecuted(orderEmailData);
-        console.log("✉️  Email de orden de venta enviado");
-      }
-
+      await this.alertService.sendOrderExecuted(createEmailDto);
       return createdOrder.toJSON() as Order;
     } catch (error) {
       console.error("Error creating order:", error);

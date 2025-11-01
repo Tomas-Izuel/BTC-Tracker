@@ -1,7 +1,10 @@
+import type Snapshot from "../../models/snapshot.model";
+
 export interface CreateOrderDto {
   price: number;
   type: "buy" | "sell";
   snapshotId: number;
+  snapshot: Snapshot;
 }
 
 export interface BinanceOrderResponse {

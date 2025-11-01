@@ -11,7 +11,7 @@ import {
 } from "../utils/constants";
 import { BINANCE_TEST_MODE } from "../utils/constants";
 
-export class BinanceService {
+export class BinanceRepository {
   private apiKey: string;
   private apiSecret: string;
   private baseUrl: string;
@@ -29,7 +29,6 @@ export class BinanceService {
       );
     }
   }
-
   /**
    * Genera la firma HMAC SHA256 requerida por Binance
    */
@@ -238,5 +237,3 @@ export class BinanceService {
     return this.testMode;
   }
 }
-
-export default BinanceService;

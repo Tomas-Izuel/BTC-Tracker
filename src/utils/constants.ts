@@ -12,14 +12,11 @@ export const CONSULT_API_URL =
   process.env.CONSULT_API_URL || "https://api.coingecko.com/api/v3";
 export const CONSULT_API_KEY = process.env.CONSULT_API_KEY || "";
 
-// SMTP Configuration
-export const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
-export const SMTP_PORT = parseInt(process.env.SMTP_PORT || "587");
-export const SMTP_SECURE = process.env.SMTP_SECURE === "true";
-export const SMTP_USER = process.env.SMTP_USER;
-export const SMTP_PASS = process.env.SMTP_PASS;
-export const EMAIL_FROM = process.env.EMAIL_FROM;
+// Email Configuration (Resend)
+export const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+export const EMAIL_FROM = process.env.EMAIL_FROM || "onboarding@resend.dev";
 export const EMAIL_TO = process.env.EMAIL_TO;
+export const EMAIL_ENABLED = process.env.EMAIL_ENABLED !== "false"; // Por defecto habilitado
 
 // Server Configuration
 export const SERVER_PORT = parseInt(process.env.SERVER_PORT || "8080");
