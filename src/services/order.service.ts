@@ -34,10 +34,20 @@ export class OrderService {
 
       console.log(snapshot);
 
-      // Comprar cuando el delta sea menor o igual al delta_buy (precio bajó lo suficiente)
-      // Ejemplo: delta = -5% o menos (como -6%, -7%)
-      if (snapshot.delta <= config.delta_buy) {
-        console.log("Order buy verified");
+      // Comprar cuando el delta de 24h O 48h sea menor o igual al delta_buy (precio bajó lo suficiente)
+      // Ejemplo: delta_24h = -5% o menos (como -6%, -7%) O delta_48h = -5% o menos
+      const shouldBuy =
+        snapshot.delta <= config.delta_buy ||
+        (snapshot.delta_48h !== null &&
+          snapshot.delta_48h !== undefined &&
+          snapshot.delta_48h <= config.delta_buy);
+
+      if (shouldBuy) {
+        const reason =
+          snapshot.delta <= config.delta_buy
+            ? `delta 24h: ${snapshot.delta}%`
+            : `delta 48h: ${snapshot.delta_48h}%`;
+        console.log(`Order buy verified (${reason})`);
         await this.createOrder(
           {
             price: snapshot.price,
@@ -50,10 +60,20 @@ export class OrderService {
         return true;
       }
 
-      // Vender cuando el delta sea mayor o igual al delta_sell (precio subió lo suficiente)
-      // Ejemplo: delta = 20% o más (como 21%, 22%)
-      if (snapshot.delta >= config.delta_sell) {
-        console.log("Order sell verified");
+      // Vender cuando el delta de 24h O 48h sea mayor o igual al delta_sell (precio subió lo suficiente)
+      // Ejemplo: delta_24h = 20% o más (como 21%, 22%) O delta_48h = 20% o más
+      const shouldSell =
+        snapshot.delta >= config.delta_sell ||
+        (snapshot.delta_48h !== null &&
+          snapshot.delta_48h !== undefined &&
+          snapshot.delta_48h >= config.delta_sell);
+
+      if (shouldSell) {
+        const reason =
+          snapshot.delta >= config.delta_sell
+            ? `delta 24h: ${snapshot.delta}%`
+            : `delta 48h: ${snapshot.delta_48h}%`;
+        console.log(`Order sell verified (${reason})`);
         await this.createOrder(
           {
             price: snapshot.price,

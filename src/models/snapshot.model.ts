@@ -34,6 +34,12 @@ class Snapshot extends Model {
   @Column(DataType.DECIMAL(10, 2))
   declare delta: number;
 
+  @Column({
+    type: DataType.DECIMAL(10, 2),
+    allowNull: true,
+  })
+  declare delta_48h: number;
+
   @CreatedAt
   @Column({
     type: DataType.DATE,

@@ -77,6 +77,12 @@ class AlertService {
   ): EmailTemplateResponseDto {
     const deltaColor = Number(snapshot.delta) >= 0 ? "#10b981" : "#ef4444";
     const deltaSign = Number(snapshot.delta) >= 0 ? "+" : "";
+    const delta48hColor =
+      snapshot.delta_48h && Number(snapshot.delta_48h) >= 0
+        ? "#10b981"
+        : "#ef4444";
+    const delta48hSign =
+      snapshot.delta_48h && Number(snapshot.delta_48h) >= 0 ? "+" : "";
     const formattedPrice = Number(snapshot.price).toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -135,6 +141,19 @@ class AlertService {
                             <p style="margin: 5px 0 0 0; color: #9ca3af; font-size: 12px;">
                               Cambio en 24 horas
                             </p>
+                            ${
+                              snapshot.delta_48h !== null &&
+                              snapshot.delta_48h !== undefined
+                                ? `
+                            <p style="margin: 20px 0 0 0; color: ${delta48hColor}; font-size: 20px; font-weight: 600;">
+                              ${delta48hSign}${snapshot.delta_48h}%
+                            </p>
+                            <p style="margin: 5px 0 0 0; color: #9ca3af; font-size: 12px;">
+                              Cambio en 48 horas
+                            </p>
+                            `
+                                : ""
+                            }
                           </td>
                         </tr>
                       </table>
@@ -201,7 +220,12 @@ class AlertService {
         REPORTE DIARIO DE BITCOIN
         
         Precio Actual: $${formattedPrice}
-        Cambio 24h: ${deltaSign}${snapshot.delta}%
+        Cambio 24h: ${deltaSign}${snapshot.delta}%${
+        snapshot.delta_48h !== null && snapshot.delta_48h !== undefined
+          ? `
+        Cambio 48h: ${delta48hSign}${snapshot.delta_48h}%`
+          : ""
+      }
         
         Detalles:
         - ID del Snapshot: #${snapshot.id}
@@ -472,6 +496,12 @@ class AlertService {
       maximumFractionDigits: 2,
     });
     const deltaSign = Number(snapshot.delta) >= 0 ? "+" : "";
+    const delta48hColor =
+      snapshot.delta_48h && Number(snapshot.delta_48h) >= 0
+        ? "#10b981"
+        : "#ef4444";
+    const delta48hSign =
+      snapshot.delta_48h && Number(snapshot.delta_48h) >= 0 ? "+" : "";
     const formattedDate = new Date(snapshot.created_at).toLocaleString(
       "es-ES",
       {
@@ -535,6 +565,19 @@ class AlertService {
                             <p style="margin: 5px 0 0 0; color: #9ca3af; font-size: 12px;">
                               Variación en las últimas 24 horas
                             </p>
+                            ${
+                              snapshot.delta_48h !== null &&
+                              snapshot.delta_48h !== undefined
+                                ? `
+                            <p style="margin: 20px 0 0 0; color: ${delta48hColor}; font-size: 20px; font-weight: 600;">
+                              ${delta48hSign}${snapshot.delta_48h}%
+                            </p>
+                            <p style="margin: 5px 0 0 0; color: #9ca3af; font-size: 12px;">
+                              Variación en las últimas 48 horas
+                            </p>
+                            `
+                                : ""
+                            }
                           </td>
                         </tr>
                       </table>
@@ -596,6 +639,19 @@ class AlertService {
       }%</span>
                                 </td>
                               </tr>
+                              ${
+                                snapshot.delta_48h !== null &&
+                                snapshot.delta_48h !== undefined
+                                  ? `
+                              <tr>
+                                <td style="padding: 8px 0; border-top: 1px solid #e5e7eb;">
+                                  <span style="color: #6b7280; font-size: 14px; font-weight: 500;">Variación 48h:</span>
+                                  <span style="color: ${delta48hColor}; font-size: 14px; font-weight: 600; float: right;">${delta48hSign}${snapshot.delta_48h}%</span>
+                                </td>
+                              </tr>
+                              `
+                                  : ""
+                              }
                               <tr>
                                 <td style="padding: 8px 0; border-top: 1px solid #e5e7eb;">
                                   <span style="color: #6b7280; font-size: 14px; font-weight: 500;">Fecha y Hora:</span>
@@ -658,12 +714,22 @@ class AlertService {
         ⚡ Se ha detectado una oportunidad favorable
         
         Precio Actual: $${formattedPrice}
-        Variación 24h: ${deltaSign}${snapshot.delta}%
+        Variación 24h: ${deltaSign}${snapshot.delta}%${
+        snapshot.delta_48h !== null && snapshot.delta_48h !== undefined
+          ? `
+        Variación 48h: ${delta48hSign}${snapshot.delta_48h}%`
+          : ""
+      }
         
         Información del Análisis:
         - ID del Snapshot: #${snapshot.id}
         - Precio: $${formattedPrice}
-        - Variación 24h: ${deltaSign}${snapshot.delta}%
+        - Variación 24h: ${deltaSign}${snapshot.delta}%${
+        snapshot.delta_48h !== null && snapshot.delta_48h !== undefined
+          ? `
+        - Variación 48h: ${delta48hSign}${snapshot.delta_48h}%`
+          : ""
+      }
         - Fecha y Hora: ${formattedDate}
         
         💡 Recomendación:
