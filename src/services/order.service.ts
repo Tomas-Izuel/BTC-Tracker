@@ -112,6 +112,8 @@ export class OrderService {
     order: CreateOrderDto,
     config: Config
   ): Promise<Order> {
+    let binanceError: any = null;
+
     try {
       let binanceResponse: BinanceOrderResponse | null = null;
       const orderData: any = {
@@ -154,15 +156,37 @@ export class OrderService {
           );
           orderData.binance_response = JSON.stringify(binanceResponse);
 
-          console.log(`Orden ejecutada exitosamente en Binance:`);
+          console.log(`✅ Orden ejecutada exitosamente en Binance:`);
           console.log(`   Order ID: ${binanceResponse.orderId}`);
           console.log(`   Status: ${binanceResponse.status}`);
           console.log(`   Executed Qty: ${binanceResponse.executedQty}`);
           console.log(`   Total: ${binanceResponse.cummulativeQuoteQty} USDT`);
-        } catch (binanceError) {
-          console.error("❌ Error ejecutando orden en Binance:", binanceError);
-          // Continuar y guardar la orden en DB aunque Binance falle
-          // El error se incluirá en los logs
+        } catch (error) {
+          binanceError = error;
+          console.error("❌ Error ejecutando orden en Binance:", error);
+
+          // Enviar email de error
+          try {
+            await this.alertService.sendOrderError({
+              snapshot: order.snapshot,
+              alertType: AlertType.ORDER_EXECUTION_ERROR,
+              error: {
+                message: `Error al ejecutar orden de ${
+                  order.type === "buy" ? "COMPRA" : "VENTA"
+                } en Binance`,
+                details: error instanceof Error ? error.message : String(error),
+                orderType: order.type,
+              },
+            });
+          } catch (emailError) {
+            console.error(
+              "Error enviando email de notificación de error:",
+              emailError
+            );
+          }
+
+          // Re-lanzar el error para que no se guarde en DB
+          throw error;
         }
       } else {
         console.warn(
@@ -185,7 +209,30 @@ export class OrderService {
       await this.alertService.sendOrderExecuted(createEmailDto);
       return createdOrder.toJSON() as Order;
     } catch (error) {
-      console.error("Error creating order:", error);
+      console.error("❌ Error creating order:", error);
+
+      // Si no se envió email de error antes (por ejemplo, error en DB), enviarlo ahora
+      if (!binanceError) {
+        try {
+          await this.alertService.sendOrderError({
+            snapshot: order.snapshot,
+            alertType: AlertType.ORDER_EXECUTION_ERROR,
+            error: {
+              message: `Error al crear orden de ${
+                order.type === "buy" ? "COMPRA" : "VENTA"
+              }`,
+              details: error instanceof Error ? error.message : String(error),
+              orderType: order.type,
+            },
+          });
+        } catch (emailError) {
+          console.error(
+            "Error enviando email de notificación de error:",
+            emailError
+          );
+        }
+      }
+
       throw error;
     }
   }

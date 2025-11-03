@@ -72,6 +72,27 @@ class AlertService {
     }
   }
 
+  async sendOrderError(data: CreateEmailDto): Promise<void> {
+    if (!data.error) {
+      throw new Error("Error information is required");
+    }
+    const template = this.generateOrderErrorTemplate(data.snapshot, data.error);
+    const response = await this.resendRepository.sendEmail({
+      to: EMAIL_TO || "",
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+    });
+
+    if (response.error) {
+      throw new Error(
+        `Error sending order error email: ${response.error.message}`
+      );
+    } else {
+      console.log(`Order error email sent to ${EMAIL_TO}`);
+    }
+  }
+
   private generateDailyReportTemplate(
     snapshot: Snapshot
   ): EmailTemplateResponseDto {
@@ -741,6 +762,202 @@ class AlertService {
         
         ---
         Sistema de Análisis de Bitcoin
+      `,
+    };
+  }
+
+  private generateOrderErrorTemplate(
+    snapshot: Snapshot,
+    error: { message: string; details?: string; orderType?: "buy" | "sell" }
+  ): EmailTemplateResponseDto {
+    const orderTypeText = error.orderType === "buy" ? "COMPRA" : "VENTA";
+    const orderTypeEmoji = error.orderType === "buy" ? "📈" : "📉";
+    const formattedPrice = Number(snapshot.price).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const deltaSign = Number(snapshot.delta) >= 0 ? "+" : "";
+    const formattedDate = new Date(snapshot.created_at).toLocaleString(
+      "es-ES",
+      {
+        dateStyle: "full",
+        timeStyle: "short",
+      }
+    );
+
+    return {
+      subject: `❌ Error al Ejecutar Orden de ${orderTypeText} - Bitcoin`,
+      html: `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Error en Orden</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+          <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f3f4f6; padding: 40px 20px;">
+            <tr>
+              <td align="center">
+                <table cellpadding="0" cellspacing="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
+                  <!-- Header -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 40px 30px; text-align: center;">
+                      <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">
+                        ❌ Error en Ejecución
+                      </h1>
+                      <p style="margin: 10px 0 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">
+                        La orden de ${orderTypeText} no pudo completarse
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Alert Banner -->
+                  <tr>
+                    <td style="background-color: #fef2f2; padding: 20px 30px; border-bottom: 3px solid #ef4444;">
+                      <p style="margin: 0; color: #7f1d1d; font-size: 15px; text-align: center; font-weight: 600;">
+                        ⚠️ La orden no se pudo ejecutar correctamente
+                      </p>
+                    </td>
+                  </tr>
+                  
+                  <!-- Main Content -->
+                  <tr>
+                    <td style="padding: 40px 30px;">
+                      <!-- Order Type Badge -->
+                      <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                        <tr>
+                          <td style="text-align: center; padding-bottom: 30px;">
+                            <div style="display: inline-block; background-color: #ef4444; color: #ffffff; padding: 12px 30px; border-radius: 30px; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                              ${orderTypeEmoji} ${orderTypeText} - ERROR
+                            </div>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <!-- Error Details Section -->
+                      <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                        <tr>
+                          <td style="padding: 25px; background-color: #fee2e2; border-radius: 12px; border-left: 4px solid #dc2626;">
+                            <p style="margin: 0 0 10px 0; color: #7f1d1d; font-size: 16px; font-weight: 700;">
+                              🚨 Mensaje de Error
+                            </p>
+                            <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.6; word-break: break-word;">
+                              ${error.message}
+                            </p>
+                            ${
+                              error.details
+                                ? `
+                            <p style="margin: 15px 0 0 0; color: #991b1b; font-size: 13px; line-height: 1.5; font-family: 'Courier New', monospace; background-color: #fecaca; padding: 10px; border-radius: 4px; word-break: break-all;">
+                              ${error.details}
+                            </p>
+                            `
+                                : ""
+                            }
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <!-- Divider -->
+                      <div style="height: 1px; background-color: #e5e7eb; margin: 30px 0;"></div>
+                      
+                      <!-- Market Context Section -->
+                      <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                        <tr>
+                          <td style="padding: 20px; background-color: #f9fafb; border-radius: 8px;">
+                            <p style="margin: 0 0 15px 0; color: #374151; font-size: 16px; font-weight: 600;">
+                              📊 Contexto del Mercado
+                            </p>
+                            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                              <tr>
+                                <td style="padding: 8px 0;">
+                                  <span style="color: #6b7280; font-size: 14px; font-weight: 500;">Precio BTC:</span>
+                                  <span style="color: #1f2937; font-size: 14px; font-weight: 600; float: right;">$${formattedPrice}</span>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 8px 0; border-top: 1px solid #e5e7eb;">
+                                  <span style="color: #6b7280; font-size: 14px; font-weight: 500;">Variación 24h:</span>
+                                  <span style="color: #1f2937; font-size: 14px; font-weight: 600; float: right;">${deltaSign}${
+        snapshot.delta
+      }%</span>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 8px 0; border-top: 1px solid #e5e7eb;">
+                                  <span style="color: #6b7280; font-size: 14px; font-weight: 500;">ID Snapshot:</span>
+                                  <span style="color: #1f2937; font-size: 14px; font-weight: 600; float: right;">#${
+                                    snapshot.id
+                                  }</span>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 8px 0; border-top: 1px solid #e5e7eb;">
+                                  <span style="color: #6b7280; font-size: 14px; font-weight: 500;">Fecha y Hora:</span>
+                                  <span style="color: #1f2937; font-size: 14px; font-weight: 600; float: right;">${formattedDate}</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <!-- Action Required Box -->
+                      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 30px;">
+                        <tr>
+                          <td style="padding: 20px; background-color: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 6px;">
+                            <p style="margin: 0 0 10px 0; color: #78350f; font-size: 14px; font-weight: 700;">
+                              💡 Acción Requerida
+                            </p>
+                            <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.6;">
+                              Por favor, verifica tu configuración y las condiciones del mercado. Puedes intentar ejecutar la orden manualmente o esperar a que las condiciones mejoren. Revisa los logs del sistema para más información.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                      <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 13px;">
+                        Sistema de Trading de Bitcoin
+                      </p>
+                      <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                        © ${new Date().getFullYear()} - Todos los derechos reservados
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `,
+      text: `
+        ERROR EN EJECUCIÓN DE ORDEN
+        
+        ❌ La orden de ${orderTypeText} no pudo completarse
+        
+        Mensaje de Error:
+        ${error.message}
+        ${error.details ? `\nDetalles:\n${error.details}` : ""}
+        
+        Contexto del Mercado:
+        - Precio BTC: $${formattedPrice}
+        - Variación 24h: ${deltaSign}${snapshot.delta}%
+        - ID Snapshot: #${snapshot.id}
+        - Fecha y Hora: ${formattedDate}
+        
+        💡 Acción Requerida:
+        Por favor, verifica tu configuración y las condiciones del mercado.
+        Puedes intentar ejecutar la orden manualmente o esperar a que las
+        condiciones mejoren. Revisa los logs del sistema para más información.
+        
+        ---
+        Sistema de Trading de Bitcoin
       `,
     };
   }

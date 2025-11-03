@@ -6,6 +6,7 @@ export enum AlertType {
   BUY_ORDER_EXECUTED = "buy_order_executed",
   SELL_ORDER_EXECUTED = "sell_order_executed",
   BUY_OPPORTUNITY = "buy_opportunity",
+  ORDER_EXECUTION_ERROR = "order_execution_error",
 }
 
 export interface EmailDto {
@@ -32,4 +33,9 @@ export interface CreateEmailDto {
   snapshot: Snapshot;
   order?: Order;
   alertType: AlertType;
+  error?: {
+    message: string;
+    details?: string;
+    orderType?: "buy" | "sell";
+  };
 }
